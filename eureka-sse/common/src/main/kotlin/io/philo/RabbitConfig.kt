@@ -7,11 +7,24 @@ import org.springframework.amqp.core.Queue
 import org.springframework.amqp.rabbit.connection.ConnectionFactory
 import org.springframework.amqp.rabbit.core.RabbitTemplate
 import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 
 @Configuration
-class RabbitConfig {
+class RabbitConfig(
+    @Value("\${spring.rabbitmq.host}")
+    val host: String,
+
+    @Value("\${spring.rabbitmq.port}")
+    val port: Int,
+
+    @Value("\${spring.rabbitmq.username}")
+    val username: String,
+
+    @Value("\${spring.rabbitmq.password}")
+    val password: String,
+) {
 
     companion object {
         private const val EVENT_PREFIX = "registry.updated"
