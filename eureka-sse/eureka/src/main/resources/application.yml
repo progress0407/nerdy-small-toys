@@ -11,10 +11,10 @@ spring:
 eureka:
   instance:
     instance-id: ${spring.application.name}:${spring.application.instance_id:${random.value}}
-    lease-expiration-duration-in-seconds: 60
-  server:
-    enable-self-preservation: false
-    eviction-interval-timer-in-ms: 120
+#    lease-expiration-duration-in-seconds: 60
+#  server:
+#    enable-self-preservation: true
+#    eviction-interval-timer-in-ms: 120
   client:
     register-with-eureka: false
     fetch-registry: false

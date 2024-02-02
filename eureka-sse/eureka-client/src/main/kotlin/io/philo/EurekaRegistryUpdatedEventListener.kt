@@ -8,18 +8,22 @@ import com.netflix.discovery.shared.Application
 import com.netflix.discovery.shared.Applications
 import mu.KotlinLogging
 import org.springframework.amqp.rabbit.annotation.RabbitListener
+import org.springframework.aop.framework.Advised
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.cloud.client.discovery.DiscoveryClient
+import org.springframework.cloud.netflix.eureka.CloudEurekaClient
 import org.springframework.core.env.Environment
 import org.springframework.stereotype.Component
 import org.springframework.web.client.RestClient
 import java.lang.reflect.Field
+import kotlin.reflect.full.declaredMemberFunctions
+import kotlin.reflect.jvm.isAccessible
 
 
 @Component
 class EurekaRegistryUpdatedEventListener(
-    private val eurekaClient: EurekaClient,
-    private val discoveryClient: DiscoveryClient,
+    private val eurekaClient: EurekaClient, // CloudEurekaClient
+    private val discoveryClient: DiscoveryClient, // CompositeDiscoveyClient
     private val environment: Environment,
     @Value("\${spring.application.name}") private val thisApplicationName: String,
 ) {
@@ -29,6 +33,35 @@ class EurekaRegistryUpdatedEventListener(
 
     @RabbitListener(queues = [RabbitConfig.QUEUE_NAME])
     fun handEvent(event: EurekaRegistryUpdatedEvent) { // 자기 자신의 정보는 등록할 필요 없다(유레카 등록시 즉시 fetch한다), 예외처리할 것. 타인의 정보만 등록하면 된다
+
+        log.info { "event: $event" }
+
+        val instanceInfo = event.instanceInfo
+        val appName: String = instanceInfo.appName
+        val status: InstanceInfo.InstanceStatus = event.instanceInfo.status
+
+        if (isThisApplication(appName)) {
+            return
+        }
+
+        try {
+            val realDiscoveryClient = ((eurekaClient as Advised).targetSource.target as CloudEurekaClient) as com.netflix.discovery.DiscoveryClient
+
+            val refreshRegistryMethod = com.netflix.discovery.DiscoveryClient::class.declaredMemberFunctions
+                .firstOrNull { it.name == "refreshRegistry" && it.parameters.size == 1}?.apply { isAccessible = true }
+
+            refreshRegistryMethod!!.call(realDiscoveryClient)
+
+        } catch (exception: Exception) {
+            log.error { exception }
+            return
+        }
+    }
+    // (discoveryClient as CompositeDiscoveryClient).discoveryClients[0]
+
+
+//    @RabbitListener(queues = [RabbitConfig.UEUE_NAME])
+    fun handEvent_3(event: EurekaRegistryUpdatedEvent) { // 자기 자신의 정보는 등록할 필요 없다(유레카 등록시 즉시 fetch한다), 예외처리할 것. 타인의 정보만 등록하면 된다
 
         log.info { "event: $event" }
 
@@ -51,6 +84,7 @@ class EurekaRegistryUpdatedEventListener(
             val application = Application(appName, listOf(instanceInfo))
 
             if (status == UP) {
+                discoveryClient
                 eurekaClientApplicationManager.addApplication(application)
             } else if (status == DOWN) {
                 eurekaClientApplicationManager.removeApplication(application)
@@ -61,9 +95,9 @@ class EurekaRegistryUpdatedEventListener(
         }
     }
 
+
+
     private fun isThisApplication(appName: String) = thisApplicationName.lowercase() == appName.lowercase()
-
-
     //    @RabbitListener(queues = [RabbitConfig.QUEUE_NAME])
     fun handEvent_2(event: EurekaRegistryUpdatedEvent) {
 
