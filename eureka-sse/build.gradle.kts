@@ -55,7 +55,7 @@ subprojects {
 
 
 		implementation("org.springframework.boot:spring-boot-starter-amqp")
-		implementation("org.springframework.cloud:spring-cloud-starter-bus-amqp:4.1.0")
+//		implementation("org.springframework.cloud:spring-cloud-starter-bus-amqp:4.1.0")
 //		implementation("org.springframework.cloud:spring-cloud-starter-config")
 
 		//  Test
@@ -81,17 +81,12 @@ subprojects {
 	}
 }
 
-project("eureka-client") {
-	dependencies {
-		implementation("org.springframework.cloud:spring-cloud-starter-netflix-eureka-client")
-		implementation(project(":common"))
-	}
-}
 
 
 project("eureka") {
 	dependencies {
 		implementation("org.springframework.cloud:spring-cloud-starter-netflix-eureka-server")
+		implementation("org.springframework.cloud:spring-cloud-starter-netflix-eureka-client")
 		implementation(project(":common"))
 	}
 }
@@ -117,6 +112,21 @@ project("ms-2") {
 		implementation("org.springframework.cloud:spring-cloud-starter-netflix-eureka-client")
 		implementation(project(":eureka-client"))
 		implementation(project(":common"))
+	}
+}
+
+
+project("eureka-client") {
+	dependencies {
+		implementation("org.springframework.cloud:spring-cloud-starter-netflix-eureka-client")
+		implementation(project(":common"))
+	}
+}
+
+project("common") {
+	dependencies {
+//		implementation("org.springframework.cloud:spring-cloud-starter-netflix-eureka-server")
+		implementation("org.springframework.cloud:spring-cloud-starter-netflix-eureka-client")
 	}
 }
 

@@ -1,21 +1,25 @@
 server.port: 8761
 
-spring.application.name: eureka
+spring:
+  application.name: eureka
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: guest
+    password: guest
 
 eureka:
   instance:
     instance-id: ${spring.application.name}:${spring.application.instance_id:${random.value}}
-#    leaseExpirationDurationInSeconds: 90
-    lease-expiration-duration-in-seconds: 6000
+    lease-expiration-duration-in-seconds: 60
   server:
-    enable-self-preservation: true
-    eviction-interval-timer-in-ms: 90000
+    enable-self-preservation: false
+    eviction-interval-timer-in-ms: 120
   client:
     register-with-eureka: false
     fetch-registry: false
 
 
-logging:
-  level:
-    com.netflix.eureka: TRACE
-    com.netflix.discovery: TRACE
+logging.level:
+  com.netflix.eureka: TRACE
+  com.netflix.discovery: TRACE
