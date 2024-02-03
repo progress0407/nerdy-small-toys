@@ -56,9 +56,16 @@ class EurekaRegistryUpdatedEventListener(
         }
     }
 
+    /**
+     * Retrieve the target object from the CloudEurekaClient AOP object that dependency injected at runtime
+     * and upcasts it to the com.netflix.discovery.DiscoveryClient.
+     */
     private fun extractDiscoveryClientFromAopProxy() =
         ((eurekaClient as Advised).targetSource.target as CloudEurekaClient) as NetflixDiscoveryDiscoveryClient
 
+    /**
+     * Extract `refreshRegistry` as a feature of Java Reflection.
+     */
     private fun extractRefreshRegistryMethod(): KFunction<*> {
         return NetflixDiscoveryDiscoveryClient::class.declaredMemberFunctions
             .firstOrNull { it.name == "refreshRegistry" && it.parameters.size == 1 }?.apply { isAccessible = true }!!
