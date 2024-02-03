@@ -7,11 +7,11 @@ import org.springframework.aop.framework.Advised
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.cloud.client.discovery.DiscoveryClient
 import org.springframework.cloud.netflix.eureka.CloudEurekaClient
-import org.springframework.core.env.Environment
 import org.springframework.stereotype.Component
-import org.springframework.web.client.RestClient
+import kotlin.reflect.KFunction
 import kotlin.reflect.full.declaredMemberFunctions
 import kotlin.reflect.jvm.isAccessible
+import com.netflix.discovery.DiscoveryClient as NetflixDiscoveryDiscoveryClient
 
 
 /**
@@ -22,14 +22,19 @@ import kotlin.reflect.jvm.isAccessible
  */
 @Component
 class EurekaRegistryUpdatedEventListener(
-    private val eurekaClient: EurekaClient, // CloudEurekaClient
-    private val discoveryClient: DiscoveryClient, // CompositeDiscoveryClient
-    private val environment: Environment,
-    @Value("\${spring.application.name}") private val thisApplicationName: String,
+
+    private val eurekaClient: EurekaClient, // CloudEurekaClient injected in runtime
+
+    private val discoveryClient: DiscoveryClient, // CompositeDiscoveryClient injected in runtime
+
+    @Value("\${spring.application.name}")
+    private val thisApplicationName: String,
 ) {
 
     private val log = KotlinLogging.logger { }
-    private val restClient = RestClient.create()
+
+    private val realDiscoveryClient = extractDiscoveryClientFromAopProxy()
+    private val refreshRegistryMethod = extractRefreshRegistryMethod()
 
     @RabbitListener(queues = [RabbitConfig.QUEUE_NAME])
     fun handEvent(event: EurekaRegistryUpdatedEvent) {
@@ -43,17 +48,20 @@ class EurekaRegistryUpdatedEventListener(
             return
 
         try {
-            val realDiscoveryClient = ((eurekaClient as Advised).targetSource.target as CloudEurekaClient) as com.netflix.discovery.DiscoveryClient
-
-            val refreshRegistryMethod = com.netflix.discovery.DiscoveryClient::class.declaredMemberFunctions
-                .firstOrNull { it.name == "refreshRegistry" && it.parameters.size == 1}?.apply { isAccessible = true }
-
-            refreshRegistryMethod!!.call(realDiscoveryClient)
+            refreshRegistryMethod.call(realDiscoveryClient)
 
         } catch (exception: Exception) {
             log.error { exception }
             return
         }
+    }
+
+    private fun extractDiscoveryClientFromAopProxy() =
+        ((eurekaClient as Advised).targetSource.target as CloudEurekaClient) as NetflixDiscoveryDiscoveryClient
+
+    private fun extractRefreshRegistryMethod(): KFunction<*> {
+        return NetflixDiscoveryDiscoveryClient::class.declaredMemberFunctions
+            .firstOrNull { it.name == "refreshRegistry" && it.parameters.size == 1 }?.apply { isAccessible = true }!!
     }
 
     /**
