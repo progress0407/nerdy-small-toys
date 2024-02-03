@@ -1,6 +1,7 @@
 package io.philo.app
 
 import com.netflix.discovery.EurekaClient
+import com.netflix.discovery.shared.Application
 import io.philo.Ms2ApiClient
 import mu.KotlinLogging
 import org.springframework.cloud.client.ServiceInstance
@@ -13,7 +14,7 @@ import org.springframework.web.bind.annotation.RestController
 class Ms1Controller(
     private val discoveryClient: DiscoveryClient,
     private val ms2ApiClient: Ms2ApiClient,
-    private val eurekaClient: EurekaClient
+    private val eurekaClient: EurekaClient,
 ) {
 
     private val log = KotlinLogging.logger { }
@@ -48,6 +49,13 @@ class Ms1Controller(
     fun instances3(): Map<String, MutableList<ServiceInstance>> {
         return discoveryClient.services.associateWith { serviceId ->
             discoveryClient.getInstances(serviceId)
+        }
+    }
+
+    @GetMapping("/test/instances-4")
+    fun instances4(): Map<String, Application> {
+        return discoveryClient.services.associateWith { serviceId ->
+            eurekaClient.getApplication(serviceId)
         }
     }
 
