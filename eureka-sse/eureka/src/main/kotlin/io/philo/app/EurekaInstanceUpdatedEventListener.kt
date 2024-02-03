@@ -19,7 +19,7 @@ import org.springframework.web.client.RestClient
  * @author philo
  */
 @Component
-class EurekaEventListener(
+class EurekaInstanceUpdatedEventListener(
     private val eventPublisher: ApplicationEventPublisher,
     private val discoveryClient: DiscoveryClient,
     private val eurekaClient: EurekaClient,
@@ -41,9 +41,5 @@ class EurekaEventListener(
             val application: Application? = eurekaClient.getApplication(appName)
             rabbitSignalSender.publishEvent(instanceInfo, application)
         }
-
-        /**
-         * todo  eureka를 제외한 모든 모듈을 강제 refresh (좋은 방법은 아니다...)
-         */
     }
 }

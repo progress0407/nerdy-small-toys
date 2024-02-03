@@ -73,6 +73,8 @@ class EurekaRegistryUpdatedEventListener(
 
     /**
      * Instance self information does not need to be registered.
+     *
+     * todo Currently, it compares the same name, but there can be multiple instances within an application. Let's change to comparing actual instance IDs.
      */
     private fun isThisApplication(appName: String) = thisApplicationName.lowercase() == appName.lowercase()
 }
