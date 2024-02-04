@@ -48,7 +48,7 @@ class EurekaRegistryUpdatedEventListener(
             return
 
         try {
-            refreshRegistryMethod.call(realDiscoveryClient)
+            refreshRegistryMethod.call(realDiscoveryClient) // invoke by reflection
 
         } catch (exception: Exception) {
             log.error { exception }
